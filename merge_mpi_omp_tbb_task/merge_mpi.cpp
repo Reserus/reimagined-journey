@@ -23,7 +23,6 @@ struct Task {
 
 struct TaskCompare {
     bool operator()(const Task& a, const Task& b) const {
-        // Меньшее значение приоритета имеет более высокий приоритет (min-heap)
         return a.priority > b.priority;
     }
 };
@@ -40,9 +39,7 @@ void mergeSort(std::vector<int>& arr) {
 
 void send_vector(int dest, int tag, const std::vector<int>& data) {
     int size = (int)data.size();
-    // Сначала отправляем размер
     MPI_Send(&size, 1, MPI_INT, dest, tag, MPI_COMM_WORLD);
-    // Затем отправляем данные
     if (size > 0)
         MPI_Send(data.data(), size, MPI_INT, dest, tag, MPI_COMM_WORLD);
 }
@@ -50,10 +47,8 @@ void send_vector(int dest, int tag, const std::vector<int>& data) {
 std::vector<int> recv_vector(int src, int tag) {
     MPI_Status status;
     int size;
-    // Сначала получаем размер
     MPI_Recv(&size, 1, MPI_INT, src, tag, MPI_COMM_WORLD, &status);
     std::vector<int> data(size);
-    // Затем получаем данные
     if (size > 0)
         MPI_Recv(data.data(), size, MPI_INT, src, tag, MPI_COMM_WORLD, &status);
     return data;
@@ -66,7 +61,6 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     const int N = 2'000'000;
-    // Объявляем t_parallel здесь, чтобы она была доступна для печати в конце
     double t_parallel = 0.0; 
     std::vector<std::vector<int>> results;
 
@@ -81,8 +75,7 @@ int main(int argc, char** argv) {
         std::sort(data_std.begin(), data_std.end());
         double t_end_std = MPI_Wtime();
         double t_std = t_end_std - t_start_std;
-
-        // Параллельная версия 
+ 
         double t_start_parallel = MPI_Wtime();
 
         int num_workers = size - 1;
@@ -92,7 +85,6 @@ int main(int argc, char** argv) {
             std::priority_queue<Task, std::vector<Task>, TaskCompare> task_queue;
 
             // Этап 1: создаём задачи сортировки
-            // ** ДЕЛЕНИЕ НА НОЛЬ ИСКЛЮЧЕНО: num_workers > 0 **
             int chunk_size = (data.size() + num_workers - 1) / num_workers;
             for (int i = 0; i < (int)data.size(); i += chunk_size) {
                 Task t;
@@ -159,15 +151,10 @@ int main(int argc, char** argv) {
 
         } else {
             // --- РЕЖИМ: Одиночный процесс (size == 1) ---
-            // Выполняем сортировку локально
-            
-            // Добавляем исходные данные для сортировки, чтобы results содержал 
-            // отсортированный массив для проверки в конце
             results.push_back(data); 
             mergeSort(results[0]);
         }
 
-        // Расчет времени для обоих режимов
         t_parallel = MPI_Wtime() - t_start_parallel;
 
 
@@ -179,7 +166,6 @@ int main(int argc, char** argv) {
         std::cout << "Параллельно:    " << t_parallel << " сек\n\n";
 
         if (!results.empty() && results[0].size() == N) {
-            // Проверка корректности только если в results что-то есть
             bool ok = (results[0] == data_std);
             std::cout << (ok ? "Результат совпадает с std::sort\n"
                               : "Ошибка в результате сортировки\n");
