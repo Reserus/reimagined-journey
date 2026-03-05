@@ -78,7 +78,7 @@ void parallelMergeSort(std::vector<int>& arr, int left, int right, int depth = 0
 int main()
 {
 
-    std::vector<int> data(1'000'000);
+    std::vector<int> data(2'000'000);
     for(size_t i = 0; i < data.size(); ++i) {
         data[i] = rand() % 10;
     }
